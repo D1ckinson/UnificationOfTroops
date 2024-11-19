@@ -8,79 +8,105 @@ namespace UnificationOfTroops
     {
         static void Main()
         {
-            char letter = 'б';
-            int soldiersQuantity = 5;
-            List<Soldier> army1 = new List<Soldier>();
-            List<Soldier> army2 = new List<Soldier>();
+            ArmyFactory armyFactory = new ArmyFactory();
+            Army army = armyFactory.Create();
 
-            FillArmy(army1, soldiersQuantity);
-            FillArmy(army2, soldiersQuantity);
+            army.WriteInfo();
+            army.MoveSoldiers();
 
-            WriteArmies(army1);
-            WriteArmies(army2);
-
-            IEnumerable<Soldier> tempList = army1.Where(soldier =>
-                soldier.SurName.ToLower().StartsWith(letter.ToString().ToLower()));
-
-            army1 = army1.Except(tempList).ToList();
-            army2 = army2.Union(tempList).ToList();
-
-            WriteArmies(army1);
-            WriteArmies(army2);
-        }
-
-        static void FillArmy(List<Soldier> army, int soldiersQuantity)
-        {
-            SoldierFabrik soldierFabrik = new SoldierFabrik();
-
-            for (int i = 0; i < soldiersQuantity; i++)
-                army.Add(soldierFabrik.CreateSoldier());
-        }
-
-        static void WriteArmies(List<Soldier> army1)
-        {
             Console.WriteLine();
-            army1.ForEach(soldier => Console.WriteLine($"{soldier.Name} {soldier.SurName}"));
+            army.WriteInfo();
+        }
+    }
+
+    class Army
+    {
+        private List<Soldier> _soldiers1;
+        private List<Soldier> _soldiers2;
+
+        public Army(List<Soldier> soldiers1, List<Soldier> soldiers2)
+        {
+            _soldiers1 = soldiers1;
+            _soldiers2 = soldiers2;
+        }
+
+        public void WriteInfo()
+        {
+            Console.WriteLine("\nПервый взвод:");
+            _soldiers1.ForEach(soldier => soldier.WriteInfo());
+
+            Console.WriteLine("\nВторой взвод:");
+            _soldiers2.ForEach(soldier => soldier.WriteInfo());
+        }
+
+        public void MoveSoldiers()
+        {
+            string letter = "б";
+            List<Soldier> tempSoldiers = _soldiers1.Where(soldier => soldier.Surname.ToLower().StartsWith(letter)).ToList();
+
+            _soldiers1 = _soldiers1.Except(tempSoldiers).ToList();
+            _soldiers2 = _soldiers2.Union(tempSoldiers).ToList();
+        }
+    }
+
+    class ArmyFactory
+    {
+        public Army Create()
+        {
+            SoldierFactory soldiersFactory = new SoldierFactory();
+
+            List<Soldier> soldiers1 = soldiersFactory.Create();
+            List<Soldier> soldiers2 = soldiersFactory.Create();
+
+            return new Army(soldiers1, soldiers2);
         }
     }
 
     class Soldier
     {
-        public Soldier(string fullName, string nationality)
+        public Soldier(string name, string surname)
         {
-            Name = fullName;
-            SurName = nationality;
+            Name = name;
+            Surname = surname;
         }
 
-        public string Name { get; private set; }
-        public string SurName { get; private set; }
+        public string Name { get; }
+        public string Surname { get; }
+
+        public void WriteInfo()
+        {
+            const int Offset = -10;
+
+            Console.WriteLine($"{Name,Offset}{Surname,Offset}");
+        }
     }
 
-    class SoldierFabrik
+    class SoldierFactory
     {
-        private List<string> _names;
-        private List<string> _surnames;
-
-        private Random _random = new Random();
-
-        public SoldierFabrik()
+        public List<Soldier> Create()
         {
-            FillNames();
-            FillSurnames();
+            Random random = new Random();
+            List<string> names = GetNames();
+            List<string> surnames = GetSurnames();
+
+            int soldiersQuantity = 10;
+            List<Soldier> soldiers = new List<Soldier>();
+
+            for (int i = 0; i < soldiersQuantity; i++)
+            {
+                string name = names[random.Next(names.Count)];
+                string surname = surnames[random.Next(surnames.Count)];
+
+                soldiers.Add(new Soldier(name, surname));
+            }
+
+            return soldiers;
         }
 
-        public Soldier CreateSoldier()
-        {
-            string name = _names[_random.Next(0, _names.Count)];
-            string surname = _surnames[_random.Next(_surnames.Count)];
+        private List<string> GetNames() =>
+            new List<string> { "Геннадий", "Дмитрий", "Максим", "Александр" };
 
-            return new Soldier(name, surname);
-        }
-
-        private void FillNames() =>
-            _names = new List<string> { "Геннадий", "Дмитрий", "Максим", "Александр" };
-
-        private void FillSurnames() =>
-            _surnames = new List<string> { "Бемичев", "Андреев", "Бузнецов", "Киррилов", "Бамонов" };
+        private List<string> GetSurnames() =>
+            new List<string> { "Бемичев", "Андреев", "Бузнецов", "Киррилов", "Бамонов" };
     }
 }
